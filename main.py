@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException, Depends
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy import select
 import uvicorn
 from pydantic import BaseModel
 from typing import Annotated
@@ -46,12 +47,14 @@ class BookSchema(BookAddSchema):
 async def add_book(data: BookAddSchema, session: SessionDep):
     new_book = BookModel(
         title = data.title,
-        author = data.author
+        author = data.author,
     )
     session.add(new_book)
     await session.commit()
     return {"ok": True}
 
 @app.get("/books")
-async def get_books():
-    ...
+async def get_books(session: SessionDep):
+    query = select(BookModel)
+    result = await session.execute(query)
+    return result.scalars().all()
